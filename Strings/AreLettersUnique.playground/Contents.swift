@@ -9,7 +9,6 @@
 
 func areLettersUnique(_ str: String) -> Bool {
     let uniqueLetters = Set(str)
-    print(uniqueLetters)
     return uniqueLetters.count == str.count
 }
 
