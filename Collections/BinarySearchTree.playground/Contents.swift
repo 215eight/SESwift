@@ -24,9 +24,6 @@ final class Tree<T: Comparable> {
             return false
         }
         return true
-//        let rightSubtreeHeight = root.rightNode?.height ?? 0
-//        let leftSubtreeHeight = root.leftNode?.height ?? 0
-//        return abs(leftSubtreeHeight - rightSubtreeHeight) <= 1
     }
 
     var height: Int {
@@ -40,6 +37,37 @@ final class Tree<T: Comparable> {
             return
         }
         root.insert(element: element)
+    }
+
+    var description: String {
+        guard let root = self.root else { return "" }
+
+        var result = ""
+        var nodesQueue = [TreeNode<T>]()
+        var nodesAtCurrentLevel = [root]
+
+        nodesQueue.append(root)
+
+        while !nodesAtCurrentLevel.isEmpty {
+            nodesQueue.removeAll()
+            nodesAtCurrentLevel.forEach {
+                if let right = $0.rightNode {
+                    nodesQueue.append(right)
+                }
+                if let left = $0.leftNode {
+                    nodesQueue.append(left)
+                }
+            }
+
+            result += nodesAtCurrentLevel.map { "\($0.element)"}
+                .joined(separator: " ")
+            result += "\n"
+
+            nodesAtCurrentLevel.removeAll()
+
+            nodesQueue.forEach { nodesAtCurrentLevel.append($0) }
+        }
+        return result
     }
 }
 
@@ -67,13 +95,13 @@ final class TreeNode<T: Comparable> {
 
     func insert(element: T) {
         switch element {
-        case _ where element > self.element:
+        case _ where element < self.element:
             guard let rightNode = self.rightNode else {
                 self.rightNode = TreeNode(element)
                 return
             }
             rightNode.insert(element: element)
-        case _ where element < self.element:
+        case _ where element > self.element:
             guard let leftNode = self.leftNode else {
                 self.leftNode = TreeNode(element)
                 return
@@ -94,6 +122,10 @@ final class TreeNode<T: Comparable> {
 import XCTest
 class Tests: XCTestCase {
     func testTree() {
+        print(Tree(elements: [2,1,3]).description)
+        print(Tree(elements: [5,1,7,6,2,1,9,1,3]).description)
+        print(Tree(elements: [1,2,3,4,5]).description)
+        print(Tree(elements: [10, 5, 4, 3, 2, 1, 11, 12, 13, 14, 15]).description)
         XCTAssertTrue(Tree(elements: [2,1,3]).isBalanced)
         XCTAssertTrue(Tree(elements: [5,1,7,6,2,1,9,1]).isBalanced)
         XCTAssertFalse(Tree(elements: [5,1,7,6,2,1,9,1,3]).isBalanced)
