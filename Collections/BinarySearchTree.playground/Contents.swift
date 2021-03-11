@@ -27,8 +27,7 @@ final class Tree<T: Comparable> {
     }
 
     var height: Int {
-        guard root != nil else { return 0 }
-        return 1 + max(root?.rightNode?.height ?? 0, root?.leftNode?.height ?? 0)
+        return root?.height ?? 0 + max(root?.rightNode?.height ?? 0, root?.leftNode?.height ?? 0)
     }
 
     func insert(element: T) {
@@ -41,35 +40,67 @@ final class Tree<T: Comparable> {
 
     var description: String {
         guard let root = self.root else { return "" }
+        print("Root height: \(root.height)")
 
         var result = ""
-        var nodesQueue = [TreeNode<T>]()
-        var nodesAtCurrentLevel = [root]
-
-        nodesQueue.append(root)
+        var nodesQueue = [(node: TreeNode<T>?, height: Int)]()
+        var nodesAtCurrentLevel: [(node: TreeNode<T>?, height: Int)] = [(node: root, height: root.height)]
 
         while !nodesAtCurrentLevel.isEmpty {
             nodesQueue.removeAll()
-            nodesAtCurrentLevel.forEach {
-                if let right = $0.rightNode {
-                    nodesQueue.append(right)
-                }
-                if let left = $0.leftNode {
-                    nodesQueue.append(left)
-                }
-            }
 
-            result += nodesAtCurrentLevel.map { "\($0.element)"}
-                .joined(separator: " ")
-            result += "\n"
+            result += nodesAtCurrentLevel.map { tuple -> String in
+                nodesQueue.append((node: tuple.node?.rightNode, height: tuple.height - 1))
+                nodesQueue.append((node: tuple.node?.leftNode, height: tuple.height - 1))
+                return description(node: tuple.node, height: tuple.height)
+            }
+            .joined(separator: " ")
+            .appending("\n")
 
             nodesAtCurrentLevel.removeAll()
 
-            nodesQueue.forEach { nodesAtCurrentLevel.append($0) }
+            nodesQueue.map {
+                guard $0.height > 0 else { return }
+                nodesAtCurrentLevel.append($0)
+            }
         }
         return result
     }
+
+    func description(node: TreeNode<T>?, height: Int) -> String {
+        guard height > 0 else {
+            return "\(node != nil ? "\(node!.element)" : "_")"
+        }
+        let paddingCount = (Int(pow(2,Double(height - 1))) / 2)
+        let padding = String(repeating: " ", count: max(((paddingCount * 2) - 1), 0))
+        return padding + "\(node != nil ? "\(node!.element)" : "_")" + padding
+    }
 }
+
+// 2
+//1 3
+//
+//   2
+// 1   3
+//4 5 6 7
+
+//           3
+//      /         \
+//     2           2
+//   /   \       /   \
+//  1     3     1     3
+// / \   / \   / \   / \
+//4   5 6   7 4   5 6   7
+
+//                       1
+//            /                     \
+//           3                       3
+//      /         \             /         \
+//     2           2           2           2
+//   /   \       /   \       /   \       /   \
+//  1     3     1     3     1     3     1     3
+// / \   / \   / \   / \   / \   / \   / \   / \
+//4   5 6   7 4   5 6   7 4   5 6   7 4   5 6   7
 
 final class TreeNode<T: Comparable> {
     var element: T
@@ -123,9 +154,10 @@ import XCTest
 class Tests: XCTestCase {
     func testTree() {
         print(Tree(elements: [2,1,3]).description)
+        print(Tree(elements: [4,2,1,3,6,5,7]).description)
+        print(Tree(elements: [8,4,12,2,6,10,14,1,3,5,7,9,10,11,15]).description)
         print(Tree(elements: [5,1,7,6,2,1,9,1,3]).description)
-        print(Tree(elements: [1,2,3,4,5]).description)
-        print(Tree(elements: [10, 5, 4, 3, 2, 1, 11, 12, 13, 14, 15]).description)
+        print(Tree(elements: [50,25,100,26,101,24,99]).description)
         XCTAssertTrue(Tree(elements: [2,1,3]).isBalanced)
         XCTAssertTrue(Tree(elements: [5,1,7,6,2,1,9,1]).isBalanced)
         XCTAssertFalse(Tree(elements: [5,1,7,6,2,1,9,1,3]).isBalanced)
