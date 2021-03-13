@@ -1,9 +1,16 @@
 /*:
  # Overview
+
+ ## Challenge 1
+
  Create a linked list of lowercase English alphabet letters, along with a method that traverses all nodes and prints their letters on a single line separated by spaces.
  Tip #1: This is several problems in one. First, create a linked list data structure, which itself is really two things. Second, use your linked list to create the alphabet. Third, write a method traverses all nodes and prints their letters.
  Tip #2: You should use a class for this. Yes, really.
  Tip #3: Once you complete your solution, keep a copy of the code – you’ll need it for future challenges!
+
+ ## Challenge 2
+ Add a a reversed() method that returns a copy of itself in reverse.
+
  */
 
 /*:
@@ -11,20 +18,20 @@
  */
 
 final class LinkedListNode<T: CustomStringConvertible> {
-    let value: T
+    let element: T
     var nextNode: LinkedListNode<T>? = nil
 
-    init(_ value: T) {
-        self.value = value
+    init(_ element: T) {
+        self.element = element
     }
 }
 
 extension LinkedListNode: CustomStringConvertible {
     var description: String {
         if let nextNode = self.nextNode {
-            return value.description + " " + nextNode.description
+            return element.description + " " + nextNode.description
         } else {
-            return value.description
+            return element.description
         }
     }
 }
@@ -32,9 +39,7 @@ extension LinkedListNode: CustomStringConvertible {
 final class LinkedList<T: CustomStringConvertible> {
     var head: LinkedListNode<T>? = nil
 
-    init(_ element: T) {
-        head = LinkedListNode(element)
-    }
+    init() {}
 
     init(arrayLiteral: [T]) {
         var optionalPreviousNode: LinkedListNode<T>? = head
@@ -48,6 +53,41 @@ final class LinkedList<T: CustomStringConvertible> {
             previousNode.nextNode = newNode
             optionalPreviousNode = newNode
         }
+    }
+
+    func copy() -> LinkedList<T> {
+        let copy = LinkedList()
+
+        var previousNode: LinkedListNode<T>? = nil
+        var optionalCurrentNode = head
+        while let currentNode = optionalCurrentNode {
+            let currentNodeCopy = LinkedListNode(currentNode.element)
+            if copy.head == nil {
+                copy.head = currentNodeCopy
+            }
+            previousNode?.nextNode = currentNodeCopy
+            previousNode = currentNodeCopy
+            optionalCurrentNode = currentNode.nextNode
+        }
+        return copy
+    }
+
+    func reverse() {
+        var nextNode: LinkedListNode<T>? = nil
+        var optionalCurrentNode = head
+        while let currentNode = optionalCurrentNode {
+            let parentNode = currentNode.nextNode
+            currentNode.nextNode = nextNode
+            optionalCurrentNode = parentNode
+            nextNode = currentNode
+        }
+        head = nextNode
+    }
+
+    func reversed() -> LinkedList<T> {
+        let copy = self.copy()
+        copy.reverse()
+        return copy
     }
 }
 
@@ -112,11 +152,19 @@ class Tests: XCTestCase {
         let linkedList = LinkedList(arrayLiteral: Array(alphabet))
         XCTAssertEqual(linkedList.description, "a b c d e f g h i j k l m n o p q r s t u v w x y z")
     }
+
+    func testLinkedListClassReversed() {
+        let alphabet = String("abcdefghijklmnopqrstuvwxyz")
+        let linkedList = LinkedList(arrayLiteral: Array(alphabet))
+        XCTAssertEqual(linkedList.reversed().description, "z y x w v u t s r q p o n m l k j i h g f e d c b a")
+    }
+
     func testLLEnum() {
         let alphabet = String("abcdefghijklmnopqrstuvwxyz")
         let linkedList = LLNode(arrayLiteral: Array(alphabet))
         XCTAssertEqual(linkedList.description, "a b c d e f g h i j k l m n o p q r s t u v w x y z")
     }
+
 }
 
 runTests(Tests())
