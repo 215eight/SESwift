@@ -9,6 +9,10 @@
  Termination: When the loop terminates, the invariant provides a useful property the helps show that the algorithm is correct
 
  Tip to remember: Insertion loops works like sorting a hand of cards. Inserting each card in the right position, keeping the sub array from start to the current card sorted.
+
+ Arithmetic Series
+ Sum = 1 + 2 + 3 + .... n
+ Sum = (n (n-1)) / 2
  */
 
 /*:
