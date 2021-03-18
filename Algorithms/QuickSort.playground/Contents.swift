@@ -22,42 +22,71 @@ extension Array where Element: Comparable {
     }
 
     private mutating func quickSort(lowerBound: Array.Index, upperBound: Array.Index) {
+        guard lowerBound.distance(to: upperBound) > 1 else { return }
 
-        func partition(lowerBound: Array.Index,
-                       upperBound: Array.Index) -> Pivot? {
-            print("Start \(lowerBound) - \(upperBound)")
-            guard lowerBound >= startIndex,
-                  upperBound <= endIndex,
-                  lowerBound < upperBound else { return nil }
+        let sortedElementIndex = upperBound - 1
 
-            let sortElementIndex = upperBound.advanced(by: -1)
-            guard sortElementIndex >= startIndex else  { return nil }
-
-            let sortElement = self[sortElementIndex]
-
-            var pivot = lowerBound
-            for index in (lowerBound ..< sortElementIndex.advanced(by: -1)) {
-                if self[index] > self[index] {
-                    swapAt(index, index+1 )
-                } else {
-                    pivot = pivot.advanced(by: 1)
-                }
+        var pivot = lowerBound
+        for index in (lowerBound ..< sortedElementIndex) {
+            if self[index] < self[sortedElementIndex] {
+                (self[pivot], self[index]) = (self[index], self[pivot])
+                pivot += 1
             }
-            print("End \(lowerBound) - \(upperBound) - \(pivot)")
-            return pivot
         }
 
-        guard let pivot = partition(lowerBound: lowerBound, upperBound: upperBound) else {
-            return
-        }
-        quickSort(lowerBound: lowerBound, upperBound: pivot.advanced(by: -1))
-        quickSort(lowerBound: pivot.advanced(by: 1), upperBound: upperBound)
+        (self[pivot], self[sortedElementIndex]) = (self[sortedElementIndex], self[pivot])
+
+        quickSort(lowerBound: lowerBound, upperBound: pivot)
+        quickSort(lowerBound: pivot + 1, upperBound: upperBound)
     }
 
     func quickSorted() -> [Element] {
         var copy = self
         copy.quickSort()
-        return self
+        return copy
+    }
+
+    func quickSorted2() -> [Element] {
+        guard count > 1 else { return self }
+
+        let pivot = self.count / 2
+        let pivotElement = self[pivot]
+        var left = [Element]()
+        var center = [Element]()
+        var right = [Element]()
+
+        for element in self {
+            if element < pivotElement {
+                left.append(element)
+            } else if element == pivotElement {
+                center.append(element)
+            } else {
+                right.append(element)
+            }
+        }
+        return left.quickSorted2() + center + right.quickSorted2()
+    }
+
+    mutating func quickSort3(left: Int, right: Int) {
+        guard left < right else { return }
+        let pivot = self[right]
+        var splitPoint = left
+
+        for i in left ..< right {
+            if self[i] < pivot {
+                (self[i], self[splitPoint]) = (self[splitPoint], self[i])
+                splitPoint += 1
+            }
+        }
+        (self[right], self[splitPoint]) = (self[splitPoint], self[right])
+        quickSort3(left: left, right: splitPoint - 1)
+        quickSort3(left: splitPoint + 1, right: right)
+    }
+
+    func quickSorted3() -> [Element] {
+        var copy = self
+        copy.quickSort3(left: self.startIndex, right: self.endIndex - 1)
+        return copy
     }
 }
 
@@ -68,11 +97,52 @@ extension Array where Element: Comparable {
 import XCTest
 class Tests: XCTestCase {
     func testQuickSort() {
-//        XCTAssertEqual([Int]().quickSorted(), [])
-//        XCTAssertEqual([1].quickSorted(), [1])
-//        XCTAssertEqual([1,2].quickSorted(), [1,2])
+        XCTAssertEqual([Int]().quickSorted(), [])
+        XCTAssertEqual([1].quickSorted(), [1])
+        XCTAssertEqual([1,2].quickSorted(), [1,2])
         XCTAssertEqual([2,1].quickSorted(), [1,2])
-//        XCTAssertEqual([3,2,1].quickSorted(), [1,2,3])
+        XCTAssertEqual([3,2,1].quickSorted(), [1,2,3])
+        XCTAssertEqual([2,1,3].quickSorted(), [1,2,3])
+        XCTAssertEqual([12,5,4,9,3,2,1].quickSorted(), [1,2,3,4,5,9,12])
+        XCTAssertEqual(["f","a","b"].quickSorted(), ["a","b","f"])
+    }
+
+    func testQuickSort2() {
+        XCTAssertEqual([Int]().quickSorted2(), [])
+        XCTAssertEqual([1].quickSorted2(), [1])
+        XCTAssertEqual([1,2].quickSorted2(), [1,2])
+        XCTAssertEqual([2,1].quickSorted2(), [1,2])
+        XCTAssertEqual([3,2,1].quickSorted2(), [1,2,3])
+        XCTAssertEqual([2,1,3].quickSorted2(), [1,2,3])
+        XCTAssertEqual([12,5,4,9,3,2,1].quickSorted2(), [1,2,3,4,5,9,12])
+        XCTAssertEqual(["f","a","b"].quickSorted2(), ["a","b","f"])
+    }
+
+    let input = (0 ..< 500).map { _ in Int(arc4random_uniform(100)) }
+
+    func testPerformance() {
+        measure {
+            _ = input.quickSorted()
+        }
+    }
+
+    func testPerformance2() {
+        measure {
+            _ = input.quickSorted2()
+        }
+    }
+
+    func testPerformance3() {
+        measure {
+            _ = input.quickSorted3()
+        }
+    }
+
+    func testQuickSortAllEqual() {
+        let inputSorted = input.sorted()
+        XCTAssertEqual(inputSorted, input.quickSorted())
+        XCTAssertEqual(inputSorted, input.quickSorted2())
+        XCTAssertEqual(inputSorted, input.quickSorted3())
     }
 }
 
