@@ -50,9 +50,7 @@ struct Grid {
         availableCoordinates = Set(allCoordinates)
     }
 
-    mutating func placeNext() -> Bool {
-        guard !availableCoordinates.isEmpty else { return false }
-        let coordinate = availableCoordinates.removeFirst()
+    mutating func place(at coordinate: Coordinate) -> Bool {
         guard !takenCoordinates.contains(coordinate) else {
             fatalError()
         }
@@ -128,7 +126,43 @@ struct Grid {
     }
 }
 
+func foo(board: [Int], queen queenNumber: Int) -> Int {
+    if queenNumber == board.count {
+        print("Solution:", board)
+        for row in 0 ..< board.count {
+            for col in 0 ..< board.count {
+                if board[row] == col {
+                    print("Q", terminator: "")
+                } else {
+                    print(".", terminator: "")
+                }
+            }
+            print("")
+        }
 
+        print("")
+        return 1
+    } else {
+        var count = 0
+        boardLoop: for column in 0 ..< board.count {
+            for row in 0 ..< queenNumber {
+                let otherQueenColumn = board[row]
+                if otherQueenColumn == column { continue boardLoop }
+
+                let deltaRow = queenNumber - row
+                let deltaCol = otherQueenColumn - column
+                if deltaRow == deltaCol { continue boardLoop }
+                if deltaRow == -deltaCol { continue boardLoop }
+            }
+
+            var boardCopy = board
+            boardCopy[queenNumber] = column
+
+            count += foo(board: boardCopy, queen: queenNumber + 1)
+        }
+        return count
+    }
+}
 
 /*:
  # Tests
@@ -137,33 +171,9 @@ struct Grid {
 import XCTest
 class Tests: XCTestCase {
     func testNQueens() {
-        var grid = Grid(size: 8)
-        print()
-        print(grid.description)
-        grid.placeNext()
-        print()
-        print(grid.description)
-        grid.placeNext()
-        print()
-        print(grid.description)
-        grid.placeNext()
-        print()
-        print(grid.description)
-        grid.placeNext()
-        print()
-        print(grid.description)
-        grid.placeNext()
-        print()
-        print(grid.description)
-        grid.placeNext()
-        print()
-        print(grid.description)
-        grid.placeNext()
-        print()
-        print(grid.description)
-        grid.placeNext()
-        print()
-        print(grid.description)
+        let emptyBoard = [Int](repeating: 0, count: 8)
+        let solutionCount = foo(board: emptyBoard, queen: 0)
+        print("Found \(solutionCount) solutions")
     }
 }
 
