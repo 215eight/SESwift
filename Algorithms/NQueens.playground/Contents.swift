@@ -29,12 +29,30 @@ struct Coordinate: Hashable, CustomStringConvertible, Comparable {
     }
 }
 
-struct Grid {
+struct Grid: Hashable {
     let size: Int
 
     var queenCoordinates: Set<Coordinate>
     var takenCoordinates: Set<Coordinate>
     var availableCoordinates: Set<Coordinate>
+
+    enum State {
+        case partial
+        case unsolved
+        case solved
+    }
+
+    var state: State {
+        guard queenCoordinates.count <= size else {
+            fatalError()
+        }
+
+        if queenCoordinates.count == size {
+            return .solved
+        } else {
+            return availableCoordinates.isEmpty ? .unsolved : .partial
+        }
+    }
 
     init(size: Int) {
         self.size = size
@@ -50,21 +68,60 @@ struct Grid {
         availableCoordinates = Set(allCoordinates)
     }
 
-    mutating func place(at coordinate: Coordinate) -> Bool {
+    init(size: Int,
+         queenCoordinates: Set<Coordinate>,
+         takenCoordinates: Set<Coordinate>,
+         availableCoordinates: Set<Coordinate>) {
+        self.size = size
+        self.queenCoordinates = queenCoordinates
+        self.takenCoordinates = takenCoordinates
+        self.availableCoordinates = availableCoordinates
+    }
+
+    func nQueens() -> [Grid] {
+
+        switch self.state {
+        case .partial:
+//            print("Partial")
+//            print(self.description)
+            var solutions = [Grid]()
+            for availableCoordinate in availableCoordinates {
+                let updatedGrid = place(at: availableCoordinate)
+                solutions.append(contentsOf: updatedGrid.nQueens())
+            }
+            return solutions
+
+        case .unsolved:
+//            print("Unsolved")
+//            print(self.description)
+            return []
+        case .solved:
+//            print("Solved")
+//            print(self.description)
+            return [self]
+        }
+    }
+
+    func place(at coordinate: Coordinate) -> Grid {
         guard !takenCoordinates.contains(coordinate) else {
             fatalError()
         }
 
         let removeCoordinates = captureCoordinates(for: coordinate)
-        availableCoordinates = availableCoordinates.subtracting(removeCoordinates)
+        let newAvailableCoordinates = availableCoordinates.subtracting(removeCoordinates)
 
-        guard !availableCoordinates.contains(coordinate) else {
+        guard !newAvailableCoordinates.contains(coordinate) else {
             fatalError()
         }
 
-        takenCoordinates = takenCoordinates.union(removeCoordinates)
-        queenCoordinates.insert(coordinate)
-        return true
+        let newTakenCoordinates = takenCoordinates.union(removeCoordinates)
+        var newQueenCoordiantes = queenCoordinates
+        newQueenCoordiantes.insert(coordinate)
+
+        return Grid(size: size,
+                    queenCoordinates: newQueenCoordiantes,
+                    takenCoordinates: newTakenCoordinates,
+                    availableCoordinates: newAvailableCoordinates)
     }
 
     func captureCoordinates(for coordinate: Coordinate) -> Set<Coordinate> {
@@ -126,7 +183,7 @@ struct Grid {
     }
 }
 
-func foo(board: [Int], queen queenNumber: Int) -> Int {
+func nQueens2(board: [Int], queen queenNumber: Int) -> Int {
     if queenNumber == board.count {
         print("Solution:", board)
         for row in 0 ..< board.count {
@@ -158,7 +215,7 @@ func foo(board: [Int], queen queenNumber: Int) -> Int {
             var boardCopy = board
             boardCopy[queenNumber] = column
 
-            count += foo(board: boardCopy, queen: queenNumber + 1)
+            count += nQueens2(board: boardCopy, queen: queenNumber + 1)
         }
         return count
     }
@@ -171,8 +228,18 @@ func foo(board: [Int], queen queenNumber: Int) -> Int {
 import XCTest
 class Tests: XCTestCase {
     func testNQueens() {
+        let grid = Grid(size: 5)
+        let solutions = grid.nQueens()
+//        XCTAssertEqual(Set(solutions).count, 2) // 4
+        XCTAssertEqual(Set(solutions).count, 10) // 5
+//        XCTAssertEqual(Set(solutions).count, 4) // 6
+//        XCTAssertEqual(Set(solutions).count, 40) // 7
+//        XCTAssertEqual(Set(solutions).count, 92) // 8
+    }
+
+    func testNQueens2() {
         let emptyBoard = [Int](repeating: 0, count: 8)
-        let solutionCount = foo(board: emptyBoard, queen: 0)
+        let solutionCount = nQueens2(board: emptyBoard, queen: 0)
         print("Found \(solutionCount) solutions")
     }
 }
