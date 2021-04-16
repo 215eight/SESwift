@@ -138,3 +138,9 @@ filtered
 
 // Reverse Range
 (0 ..< 20).reversed()
+
+
+/*:
+ # Functions
+ */
+stride(from: 0, to: 10, by: 2).forEach { print($0) }
