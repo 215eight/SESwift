@@ -24,11 +24,11 @@ public func runTests<T: XCTestCase>(_ testSuite: T) {
     type(of: testSuite).defaultTestSuite.run()
 }
 
-public func runTestCases<I, O>(inputOffset: Int,
-                               inputBuilder: ([String]) -> I,
-                               outputOffset: Int,
-                               outputBuilder: ([String]) -> O,
-                               test: (I, O) -> ()) {
+public func runTestCases<I, O: Equatable>(inputOffset: Int,
+                                          inputBuilder: ([String]) -> I,
+                                          outputOffset: Int,
+                                          outputBuilder: ([String]) -> O,
+                                          test: (I, O) -> O) {
     testFiles().forEach { file in
         let startDate = Date()
         print("Starting test cases in file \(file.name)")
@@ -40,6 +40,7 @@ public func runTestCases<I, O>(inputOffset: Int,
                   test: test)
         print("Ending test cases in file \(file.name)")
         print("File test cases duration: \(Int(Date().timeIntervalSince(startDate)))s")
+        print()
     }
 }
 
@@ -68,12 +69,12 @@ fileprivate func testFiles() -> [(name: String, input: [String] , output: [Strin
     }
 }
 
-fileprivate func testCases<I, O>(fileLines: (input: [String], output: [String]),
-                                 inputOffset: Int,
-                                 inputBuilder: ([String]) -> I,
-                                 outputOffset: Int,
-                                 outputBuilder: ([String]) -> O,
-                                 test: (I, O) -> ()) {
+fileprivate func testCases<I, O: Equatable>(fileLines: (input: [String], output: [String]),
+                                            inputOffset: Int,
+                                            inputBuilder: ([String]) -> I,
+                                            outputOffset: Int,
+                                            outputBuilder: ([String]) -> O,
+                                            test: (I, O) -> O) {
     var inputRunner = 0
     var outputRunner = 0
 
@@ -83,7 +84,13 @@ fileprivate func testCases<I, O>(fileLines: (input: [String], output: [String]),
         let input = inputBuilder(Array(fileLines.input[inputRunner ..< inputRunner + inputOffset]))
         let output = outputBuilder(Array(fileLines.output[outputRunner ..< outputRunner + outputOffset]))
 
-        test(input, output)
+        let testOutput = test(input, output)
+        if testOutput == output {
+            print("Success: Test Case \(input) - Output: \(testOutput)")
+        } else {
+            print("Failure: Test Case \(input) - Expected Output \(output) - Received Output: \(testOutput)")
+            assertionFailure()
+        }
 
         inputRunner += inputOffset
         outputRunner += outputOffset

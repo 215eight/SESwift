@@ -58,14 +58,16 @@ fileprivate func testFiles() -> [(name: String, input: [String] , output: [Strin
         let inputFile = inputRoot + "/" + input
         let inputContent = try! String(contentsOfFile: inputFile, encoding: .utf8)
         let inputContentLines = inputContent.components(separatedBy: .newlines)
+            .filter { !$0.isEmpty }
 
         let outputFile = outputRoot + "/" + output
         let outputContent = try! String(contentsOfFile: outputFile, encoding: .utf8)
         let outputContentLines = outputContent.components(separatedBy: .newlines)
+            .filter { !$0.isEmpty }
 
         return (name: input,
-                input: inputContentLines.dropLast(),
-                output: outputContentLines.dropLast())
+                input: inputContentLines,
+                output: outputContentLines)
     }
 }
 
