@@ -33,17 +33,22 @@ final class Queue<T: CustomStringConvertible> {
     }
 
     func push(_ node: Node<T>) {
+        guard maxCapacity > 0 else {
+            return
+        }
+
         defer {
             capacity += 1
-        }
-        guard !isEmpty else {
-            self.head = node
-            self.tail = node
-            return
         }
 
         if capacity == maxCapacity {
             pop()
+        }
+
+        guard !isEmpty else {
+            self.head = node
+            self.tail = node
+            return
         }
 
         head?.parentNode = node
@@ -52,28 +57,42 @@ final class Queue<T: CustomStringConvertible> {
     }
 
     func remove(_ node: Node<T>) -> Node<T> {
+        defer {
+            capacity -= 1
+        }
         node.parentNode?.nextNode = node.nextNode
         node.nextNode?.parentNode = node.parentNode
 
+        if head === node {
+            head = node.nextNode
+        }
+
+        if tail === node {
+            tail = node.parentNode
+        }
+
         node.parentNode = nil
         node.nextNode = nil
-
-        capacity -= 1
 
         return node
     }
 
     func pop() -> Node<T>? {
-        defer {
-            capacity -= 1
-        }
         guard !isEmpty else {
             return nil
         }
 
+        defer {
+            capacity -= 1
+        }
+
+        if head === tail {
+            head = nil
+        }
+
         let temp = tail
-        tail?.parentNode?.nextNode = nil
         tail = tail?.parentNode
+        tail?.nextNode = nil
         temp?.parentNode = nil
         temp?.nextNode = nil
 
@@ -136,61 +155,104 @@ final class LRUCache<K: Hashable, T: CustomStringConvertible> {
 
 import XCTest
 class Tests: XCTestCase {
-    func testQueue() {
-        let queue = Queue<Int>(maxCapacity: 5)
-        let node0 = Node(value: 0)
-        queue.push(node0)
-        XCTAssertEqual(queue.description, "0")
-        queue.remove(node0)
-        XCTAssertEqual(queue.description, "")
-        queue.push(node0)
-        queue.push(node0)
-        XCTAssertEqual(queue.description, "0 0")
-        queue.remove(node0)
-        XCTAssertEqual(queue.description, "0")
 
+
+    func test_Queue_zeroCapacity() {
+        let queue = Queue<Int>(maxCapacity: 0)
+        queue.push(Node(value: 1))
+        XCTAssertEqual(queue.description, "")
+        XCTAssertEqual(queue.capacity, 0)
+    }
+
+    func test_Queue_push() {
+        let queue = Queue<Int>(maxCapacity: 2)
+        queue.push(Node(value: 1))
+        queue.push(Node(value: 2))
+        XCTAssertEqual(queue.description, "2 1")
+        XCTAssertEqual(queue.capacity, 2)
+    }
+
+    func test_Queue_pushOverCapacity() {
+        let queue = Queue<Int>(maxCapacity: 2)
         queue.push(Node(value: 1))
         queue.push(Node(value: 2))
         queue.push(Node(value: 3))
-        let node4 = Node(value: 4)
-        queue.push(node4)
+        queue.push(Node(value: 4))
 
-        XCTAssertEqual(queue.description, "4 3 2 1 0")
-        XCTAssertEqual(queue.capacity, 5)
+        XCTAssertEqual(queue.description, "4 3")
+        XCTAssertEqual(queue.capacity, 2)
+    }
+
+    func test_Queue_remove() {
+        let queue = Queue<Int>(maxCapacity: 2)
+        let node1 = Node(value: 1)
+        let node2 = Node(value: 2)
+        queue.push(node1)
+        queue.push(node2)
+        queue.remove(node1)
+        queue.remove(node2)
+
+        XCTAssertEqual(queue.description, "")
+        XCTAssertEqual(queue.capacity, 0)
+        XCTAssertTrue(queue.isEmpty)
+    }
+
+    func test_Queue_remove_single() {
+        let queue = Queue<Int>(maxCapacity: 2)
+        let node1 = Node(value: 1)
+        queue.push(node1)
+        queue.remove(node1)
+
+        XCTAssertEqual(queue.description, "")
+        XCTAssertEqual(queue.capacity, 0)
+        XCTAssertTrue(queue.isEmpty)
+    }
+
+    func test_Queue_popEmpty() {
+        let queue = Queue<Int>(maxCapacity: 2)
+        queue.pop()
+
+        XCTAssertEqual(queue.description, "")
+        XCTAssertEqual(queue.capacity, 0)
+        XCTAssertTrue(queue.isEmpty)
+    }
+
+    func test_Queue_pop() {
+        let queue = Queue<Int>(maxCapacity: 2)
+        queue.push(Node(value: 1))
+        queue.push(Node(value: 2))
+        queue.push(Node(value: 3))
+        queue.push(Node(value: 4))
+
+        XCTAssertEqual(queue.description, "4 3")
+        XCTAssertEqual(queue.capacity, 2)
 
         queue.pop()
-        XCTAssertEqual(queue.description, "4 3 2 1")
-        XCTAssertEqual(queue.capacity, 4)
-
         queue.pop()
-        XCTAssertEqual(queue.description, "4 3 2")
-        XCTAssertEqual(queue.capacity, 3)
+        queue.pop()
+        queue.pop()
 
-        queue.push(Node(value: 5))
-        queue.push(Node(value: 6))
-        XCTAssertEqual(queue.description, "6 5 4 3 2")
-        XCTAssertEqual(queue.capacity, 5)
-
-        queue.remove(node4)
-        XCTAssertEqual(queue.description, "6 5 3 2")
-        XCTAssertEqual(queue.capacity, 4)
-
-        queue.push(Node(value: 7))
-        XCTAssertEqual(queue.description, "7 6 5 3 2")
-        XCTAssertEqual(queue.capacity, 5)
-
-        queue.push(Node(value: 8))
-        XCTAssertEqual(queue.description, "8 7 6 5 3")
-        XCTAssertEqual(queue.capacity, 5)
+        XCTAssertEqual(queue.description, "")
+        XCTAssertEqual(queue.capacity, 0)
+        XCTAssertTrue(queue.isEmpty)
     }
 
     func testLRUCache() {
         let cache = LRUCache<Int, Int>(maxCapacity: 5)
         cache.put(value: 1, key: 1)
-        print(cache.description)
         cache.put(value: 1, key: 1)
+        cache.put(value: 2, key: 2)
+        cache.put(value: 3, key: 3)
+        cache.put(value: 4, key: 4)
+        cache.put(value: 5, key: 5)
         print(cache.description)
-        cache.put(value: 1, key: 1)
+        cache.put(value: 6, key: 6)
+        print(cache.description)
+        cache.put(value: 7, key: 7)
+        print(cache.description)
+        cache.put(value: 8, key: 8)
+        print(cache.description)
+        cache.get(key: 8)
         print(cache.description)
     }
 }
