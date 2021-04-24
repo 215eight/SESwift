@@ -251,6 +251,130 @@ func activityNotifications2(expenditure: [Int], lookback: Int) -> Int {
     return count
 }
 
+func binarySearch<T: Comparable>(_ a: [T], key: T) -> Int? {
+    var lowerBound = 0
+    var upperBound = a.count
+    while lowerBound < upperBound {
+        let midIndex = lowerBound + (upperBound - lowerBound) / 2
+        if a[midIndex] == key {
+            return midIndex
+        } else if a[midIndex] < key {
+            lowerBound = midIndex + 1
+        } else {
+            upperBound = midIndex
+        }
+    }
+    return nil
+}
+
+func binarySearchInsert<T: Comparable>(_ a: [T], key: T) -> Int {
+    var lowerBound = 0
+    var upperBound = a.count
+    while lowerBound < upperBound {
+        let midIndex = lowerBound + (upperBound - lowerBound) / 2
+        if a[midIndex] == key {
+            return midIndex
+        } else if a[midIndex] < key {
+            lowerBound = midIndex + 1
+        } else {
+            upperBound = midIndex
+        }
+    }
+
+    return lowerBound
+}
+
+func mergeSort(_ array: [Int]) -> [Int] {
+  guard array.count > 1 else { return array }    // 1
+
+  let middleIndex = array.count / 2              // 2
+
+  let leftArray = mergeSort(Array(array[0..<middleIndex]))             // 3
+
+  let rightArray = mergeSort(Array(array[middleIndex..<array.count]))  // 4
+
+  return merge(leftPile: leftArray, rightPile: rightArray)             // 5
+}
+
+func merge(leftPile: [Int], rightPile: [Int]) -> [Int] {
+  // 1
+  var leftIndex = 0
+  var rightIndex = 0
+
+  // 2
+  var orderedPile = [Int]()
+  orderedPile.reserveCapacity(leftPile.count + rightPile.count)
+
+  // 3
+  while leftIndex < leftPile.count && rightIndex < rightPile.count {
+    if leftPile[leftIndex] < rightPile[rightIndex] {
+      orderedPile.append(leftPile[leftIndex])
+      leftIndex += 1
+    } else if leftPile[leftIndex] > rightPile[rightIndex] {
+      orderedPile.append(rightPile[rightIndex])
+      rightIndex += 1
+    } else {
+      orderedPile.append(leftPile[leftIndex])
+      leftIndex += 1
+      orderedPile.append(rightPile[rightIndex])
+      rightIndex += 1
+    }
+  }
+
+  // 4
+  while leftIndex < leftPile.count {
+    orderedPile.append(leftPile[leftIndex])
+    leftIndex += 1
+  }
+
+  while rightIndex < rightPile.count {
+    orderedPile.append(rightPile[rightIndex])
+    rightIndex += 1
+  }
+
+  return orderedPile
+}
+
+extension Array where Element ==  Int {
+    var median: Double? {
+        guard !isEmpty else {
+            return nil
+        }
+        if count % 2 == 0 {
+            let midIndex = count / 2
+            let lhs = self[midIndex - 1]
+            let rhs = self[midIndex]
+            return Double(lhs + rhs) / 2.0
+        } else {
+            return Double(self[count / 2])
+        }
+    }
+}
+
+func activityNotifications3(expenditure: [Int], d: Int) -> Int {
+
+    let lookbackArray = Array(expenditure[0 ..< d])
+    var sortedLookbackArray = mergeSort(lookbackArray)
+
+    var count = 0
+    (d ..< expenditure.count).forEach { index in
+        guard let median = sortedLookbackArray.median else {
+            return
+        }
+        let expenditureValue = expenditure[d]
+        if Double(expenditureValue) >= 2.0 * median {
+            count += 1
+        }
+        let valueToRemove = expenditure[index - d]
+        if let removeIndex = binarySearch(sortedLookbackArray, key: valueToRemove) {
+            sortedLookbackArray.remove(at: removeIndex)
+            let insertIndex = binarySearchInsert(sortedLookbackArray, key: expenditureValue)
+            sortedLookbackArray.insert(expenditureValue, at: insertIndex)
+        }
+    }
+    return count
+}
+
 /*:
  # Tests
  */
@@ -267,6 +391,18 @@ func activityNotifications2(expenditure: [Int], lookback: Int) -> Int {
 //    return activityNotifications(expenditure: input.0, lookback: input.1)
 //}
 
+//runTestCases(inputOffset: 2,
+//             inputBuilder: { lines -> ([Int], Int) in
+//                let lookback: Int = Int(lines[0].components(separatedBy: .whitespaces).last!)!
+//                let expediture: [Int] = lines[1].components(separatedBy: .whitespaces).map { Int($0)! }
+//                return (expediture, lookback)
+//             }, outputOffset: 1,
+//             outputBuilder: { lines -> Int in
+//                return (Int(lines[0])!)
+//             }) { (input, expectedResult) in
+//    return activityNotifications2(expenditure: input.0, lookback: input.1)
+//}
+
 runTestCases(inputOffset: 2,
              inputBuilder: { lines -> ([Int], Int) in
                 let lookback: Int = Int(lines[0].components(separatedBy: .whitespaces).last!)!
@@ -276,5 +412,5 @@ runTestCases(inputOffset: 2,
              outputBuilder: { lines -> Int in
                 return (Int(lines[0])!)
              }) { (input, expectedResult) in
-    return activityNotifications2(expenditure: input.0, lookback: input.1)
+    return activityNotifications3(expenditure: input.0, d: input.1)
 }
