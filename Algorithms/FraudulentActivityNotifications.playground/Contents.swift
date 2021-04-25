@@ -375,6 +375,105 @@ func activityNotifications3(expenditure: [Int], d: Int) -> Int {
     return count
 }
 
+struct Histogram {
+    private var histogram: [Int]
+    private let lookback: Int
+
+    init(values: [Int], count: Int, lookback: Int) {
+        self.lookback = lookback
+        histogram = Array<Int>(repeating: 0, count: count)
+        values[0 ..< lookback].forEach { index in
+            histogram[index] += 1
+        }
+    }
+
+    mutating func remove(value: Int) {
+        histogram[value] = max(0, histogram[value] - 1)
+    }
+
+    mutating func insert(value: Int) {
+        histogram[value] += 1
+    }
+
+    private func advance(index: Int) -> Int? {
+        guard index < histogram.count else {
+            return nil
+        }
+        var offset: Int? = nil
+        for runner in (index..<histogram.count) {
+            let valueCount = histogram[runner]
+            if valueCount > 0 {
+                offset = runner
+                break
+            }
+        }
+        return offset
+    }
+
+    var median: Double {
+        guard !histogram.isEmpty else {
+            return 0
+        }
+
+        guard histogram.count != 1 else {
+            return Double(histogram[0])
+        }
+
+        let midLookback = lookback / 2
+
+        var acc = 0
+        var medianOffset = 0
+        for (offset, valueCount) in histogram.enumerated() {
+            acc += valueCount
+            if acc >= midLookback {
+                medianOffset = offset
+                break
+            }
+        }
+
+        if lookback % 2 == 0 {
+            if acc - midLookback == 0 {
+                guard let upperMedianOffset = advance(index: medianOffset + 1) else {
+                    fatalError()
+                }
+                return Double(medianOffset + upperMedianOffset) / 2
+            } else {
+                return Double(medianOffset)
+            }
+        } else {
+            guard let index = acc - midLookback == 0 ? advance(index: medianOffset + 1) : medianOffset else {
+                fatalError()
+            }
+            return Double(index)
+        }
+   }
+}
+
+var histogram = Histogram(values: [0,0,0,3,3,3], count: 4, lookback: 6)
+assert(histogram.median == 1.5)
+histogram = Histogram(values: [0,0,0,3,3,3], count: 4, lookback: 5)
+assert(histogram.median == 0.0)
+histogram = Histogram(values: [0,1,0,3,2,3], count: 4, lookback: 5)
+assert(histogram.median == 1.0)
+histogram = Histogram(values: [3,3,2,1,1,3], count: 4, lookback: 5)
+assert(histogram.median == 2.0)
+histogram = Histogram(values: [0,1,1,1,2,2], count: 4, lookback: 6)
+assert(histogram.median == 1.0)
+histogram = Histogram(values: [0,1,1,2,2,2], count: 4, lookback: 6)
+assert(histogram.median == 1.5)
+
+func activityNotifications4(expenditure: [Int], d: Int) -> Int {
+    print(expenditure.count, d)
+    var histogram = Histogram(values: expenditure, count: 201, lookback: d)
+    var acc = 0
+    for index in (d ..< expenditure.count) {
+        let value = expenditure[index]
+        acc += Double(value) >= 2.0 * histogram.median ? 1 : 0
+        histogram.remove(value: expenditure[index-d])
+        histogram.insert(value: expenditure[index])
+    }
+    return acc
+}
 /*:
  # Tests
  */
@@ -403,6 +502,18 @@ func activityNotifications3(expenditure: [Int], d: Int) -> Int {
 //    return activityNotifications2(expenditure: input.0, lookback: input.1)
 //}
 
+//runTestCases(inputOffset: 2,
+//             inputBuilder: { lines -> ([Int], Int) in
+//                let lookback: Int = Int(lines[0].components(separatedBy: .whitespaces).last!)!
+//                let expediture: [Int] = lines[1].components(separatedBy: .whitespaces).map { Int($0)! }
+//                return (expediture, lookback)
+//             }, outputOffset: 1,
+//             outputBuilder: { lines -> Int in
+//                return (Int(lines[0])!)
+//             }) { (input, expectedResult) in
+//    return activityNotifications3(expenditure: input.0, d: input.1)
+//}
+
 runTestCases(inputOffset: 2,
              inputBuilder: { lines -> ([Int], Int) in
                 let lookback: Int = Int(lines[0].components(separatedBy: .whitespaces).last!)!
@@ -412,5 +523,5 @@ runTestCases(inputOffset: 2,
              outputBuilder: { lines -> Int in
                 return (Int(lines[0])!)
              }) { (input, expectedResult) in
-    return activityNotifications3(expenditure: input.0, d: input.1)
+    return activityNotifications4(expenditure: input.0, d: input.1)
 }
