@@ -2,86 +2,62 @@
  # Overview
  */
 
-/*:
- # Code
- */
-
-func merge<T: Comparable>(lhs: [T], rhs: [T]) -> (sorted: [T], inversions: Int) {
-    var sortedArray = [T]()
-    var (lhsIndex, rhsIndex) = (0,0)
+func merge<T: Comparable>(array: inout [T], sortedArray: inout [T], lhs: Range<Int>, rhs: Range<Int>) -> Int {
     var inversions = 0
-    while lhsIndex < lhs.count || rhsIndex < rhs.count {
-        guard lhsIndex < lhs.count, rhsIndex < rhs.count else {
-            if lhsIndex < lhs.count {
-                sortedArray.append(contentsOf: lhs[lhsIndex...])
-                lhsIndex = lhs.count
-            } else {
-                sortedArray.append(contentsOf: rhs[rhsIndex...])
-                rhsIndex = rhs.count
-            }
-            continue
-        }
+    var index = lhs.lowerBound
+    var lhsIndex = lhs.lowerBound
+    var rhsIndex = rhs.lowerBound
 
-        if lhs[lhsIndex] <= rhs[rhsIndex] {
-            sortedArray.append(lhs[lhsIndex])
+    while lhs.contains(lhsIndex), rhs.contains(rhsIndex) {
+        if array[lhsIndex] <= array[rhsIndex] {
+            sortedArray[index] = array[lhsIndex]
             lhsIndex += 1
         } else {
-            sortedArray.append(rhs[rhsIndex])
-            inversions += (lhs.count - lhsIndex)
+            sortedArray[index] = array[rhsIndex]
+            inversions += (lhs.upperBound - lhsIndex)
             rhsIndex += 1
         }
+        index += 1
     }
+
+    while lhs.contains(lhsIndex) {
+        sortedArray[index] = array[lhsIndex]
+        lhsIndex += 1
+        index += 1
+    }
+
+    while rhsIndex < rhs.count {
+        sortedArray[index] = array[rhsIndex]
+        rhsIndex += 1
+        index += 1
+    }
+
+    for i in lhs.lowerBound ..< rhs.upperBound {
+        array[i] = sortedArray[i]
+    }
+
+    return inversions
+}
+
+func mergeSort<T: Comparable>(_ array: inout [T], range: Range<Int>, sortedArray: inout [T], inversions: Int) -> Int {
+    guard range.count > 1 else {
+        return inversions
+    }
+    let midPoint = range.count / 2
+    let leftRange = (range.lowerBound ..< range.lowerBound + midPoint)
+    let rightRange = (range.lowerBound + midPoint ..< range.upperBound)
+    let lefttHalf = mergeSort(&array, range: leftRange, sortedArray: &sortedArray, inversions: inversions)
+    let rightHalf = mergeSort(&array, range: rightRange, sortedArray: &sortedArray, inversions: inversions)
+    let result = merge(array: &array, sortedArray: &sortedArray, lhs: leftRange, rhs: rightRange)
+    return (lefttHalf + rightHalf + result)
+}
+
+func mergeSort<T: Comparable>(_ array: [T]) -> (sorted: [T], inversions: Int) {
+    var array = array
+    var sortedArray = array
+    let inversions = mergeSort(&array, range: (0 ..< array.count), sortedArray: &sortedArray, inversions: 0)
     return (sortedArray, inversions)
 }
-
-func mergeSort<T: Comparable>(_ array: [T], inversions: Int = 0) -> (sorted: [T], inversions: Int) {
-    guard array.count > 1 else {
-        return (array, inversions)
-    }
-    let midPoint = array.count / 2
-    let lefttHalf = mergeSort(Array(array[..<midPoint]), inversions: inversions)
-    let righttHalf = mergeSort(Array(array[midPoint...]), inversions: inversions)
-    let result = merge(lhs: lefttHalf.sorted, rhs: righttHalf.sorted)
-    return (result.sorted, lefttHalf.inversions + righttHalf.inversions + result.inversions)
-}
-/*:
- # Tests
- */
-
-import XCTest
-class Tests: XCTestCase {
-    func testMergeSort() {
-        var result = mergeSort([Int]())
-        XCTAssertEqual(result.sorted, [])
-        XCTAssertEqual(result.inversions, 0)
-
-        result = mergeSort([1])
-        XCTAssertEqual(result.sorted, [1])
-        XCTAssertEqual(result.inversions, 0)
-
-        result = mergeSort([1,2])
-        XCTAssertEqual(result.sorted, [1,2])
-        XCTAssertEqual(result.inversions, 0)
-
-        result = mergeSort([2,1])
-        XCTAssertEqual(result.sorted, [1,2])
-        XCTAssertEqual(result.inversions, 1)
-
-        result = mergeSort([3,2,1])
-        XCTAssertEqual(result.sorted, [1,2,3])
-        XCTAssertEqual(result.inversions, 3)
-
-        result = mergeSort([2,0,3])
-        XCTAssertEqual(result.sorted, [0,2,3])
-        XCTAssertEqual(result.inversions, 1)
-
-        result = mergeSort([2,0,1,3])
-        XCTAssertEqual(result.sorted, [0,1,2,3])
-        XCTAssertEqual(result.inversions, 2)
-    }
-}
-
-runTests(Tests())
 
 runTestCases(inputOffset: 2, inputBuilder: { lines -> [Int] in
     let line = lines[1]
@@ -93,4 +69,88 @@ outputBuilder: { lines in
     return Int(lines[0])!
 }) { (input, output) in
     return mergeSort(input).inversions
+}
+
+func merge(_ array: inout [Int], sortedArray: inout [Int], lhs: Range<Int>, rhs: Range<Int>) -> Int {
+    var inversions = 0
+    var index = lhs.lowerBound
+    var lhsIndex = lhs.lowerBound
+    var rhsIndex = rhs.lowerBound
+
+    while lhs.contains(lhsIndex), rhs.contains(rhsIndex) {
+        let lhsValue = array[lhsIndex]
+        let rhsValue = array[rhsIndex]
+
+        if lhsValue <= rhsValue {
+            sortedArray[index] =  lhsValue
+            lhsIndex += 1
+        } else {
+            inversions += lhs.upperBound - lhsIndex
+            sortedArray[index] = rhsValue
+            rhsIndex += 1
+        }
+        index += 1
+    }
+
+    while lhs.contains(lhsIndex) {
+        sortedArray[index] = array[lhsIndex]
+        lhsIndex += 1
+        index += 1
+    }
+
+    while rhs.contains(rhsIndex) {
+        sortedArray[index] = array[rhsIndex]
+        rhsIndex += 1
+        index += 1
+    }
+
+    for i in lhs.lowerBound ..< rhs.upperBound {
+        array[i] = sortedArray[i]
+    }
+
+    return inversions
+}
+
+func mergeSort2(_ array: [Int]) -> ([Int], Int) {
+    var inversions = 0
+    var array = array
+    var sortedArray = array
+    var subArrayLength = 1
+    while subArrayLength < array.count {
+        var subArrayIndex = 0
+        while subArrayIndex < array.count {
+            let lhsLower = subArrayIndex
+            let lhsUpper = lhsLower + subArrayLength
+            let lhs = (lhsLower ..< lhsUpper)
+
+            let rhsLower = subArrayIndex + subArrayLength
+            var rhsUpper = rhsLower + subArrayLength
+            if rhsLower >= array.count {
+                break
+            }
+            if rhsUpper > array.count {
+                rhsUpper = array.count
+            }
+            let rhs = (rhsLower ..< rhsUpper)
+
+            let subInversions = merge(&array, sortedArray: &sortedArray, lhs: lhs, rhs: rhs)
+            inversions += subInversions
+            subArrayIndex = subArrayIndex + 2 * subArrayLength
+        }
+        subArrayLength *= 2
+    }
+    return (sortedArray, inversions)
+}
+
+
+runTestCases(inputOffset: 2, inputBuilder: { lines -> [Int] in
+    let line = lines[1]
+    return line
+        .components(separatedBy: .whitespaces)
+        .map { Int($0)! }
+}, outputOffset: 1,
+outputBuilder: { lines in
+    return Int(lines[0])!
+}) { (input, output) in
+    return mergeSort2(input).1
 }
