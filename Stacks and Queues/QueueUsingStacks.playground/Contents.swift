@@ -6,72 +6,101 @@
  # Code
  */
 
-struct Stack<T> {
+class Node<T> {
+    let value: T
+    var previous: Node?
+    var next: Node?
 
-    private var stack = [T]()
+    var isHead: Bool {
+        return previous == nil
+    }
+
+    var isTail: Bool {
+        return next == nil
+    }
+
+    init(value: T) {
+        self.value = value
+    }
+}
+
+class Stack<T> {
+
+    private var head: Node<T>? = nil
 
     var isEmpty: Bool {
-        return stack.isEmpty
+        return head == nil
     }
 
-    mutating func push(_ element: T) {
-        stack.append(element)
+    func push(_ element: T) {
+        let newNode = Node(value: element)
+        guard let head = head else {
+            self.head = newNode
+            return
+        }
+        head.next = newNode
+        newNode.previous = head
+        self.head = newNode
     }
 
-    mutating func pop() -> T? {
-        guard !stack.isEmpty else {
+    func pop() -> T? {
+        guard let head = head else {
             return nil
         }
-        return stack.removeLast()
+        let temp = head
+        self.head = head.previous
+        self.head?.next = nil
+        temp.previous = nil
+        return temp.value
     }
 
     var top: T? {
-        return stack.last
+        return head?.value
     }
 }
 
 
-struct Queue<T> {
+final class Queue<T> {
 
-    private var stack = Stack<T>()
-    private var tempStack = Stack<T>()
-    private var isInverted = false
+    private var head: Node<T>? = nil
+    private var tail: Node<T>? = nil
 
-    mutating func enqueue(_ element: T) {
-        if isInverted {
-            while let element = tempStack.pop() {
-                stack.push(element)
-            }
-            stack.push(element)
-            isInverted = false
-        } else {
-            stack.push(element)
-        }
-
+    var isEmpty: Bool {
+        return head == nil && tail == nil
     }
 
-    mutating func dequeue() -> T? {
-        if isInverted {
-            return tempStack.pop()
-        } else {
-            while let element = stack.pop() {
-                tempStack.push(element)
-            }
-            isInverted = true
-            return tempStack.pop()
+    func enqueue(_ element: T) {
+        let newNode = Node(value: element)
+        guard !isEmpty else {
+            self.head = newNode
+            self.tail = newNode
+            return
         }
+
+        newNode.next = tail
+        tail?.previous = newNode
+
+        self.tail = newNode
     }
 
-    mutating func front() -> T? {
-        if isInverted {
-            return tempStack.top
-        } else {
-            while let element = stack.pop() {
-                tempStack.push(element)
-            }
-            isInverted = true
-            return tempStack.top
+    func dequeue() -> T? {
+        guard !isEmpty else {
+            return nil
         }
+        let temp = head
+        head = head?.previous
+        head?.next = nil
+
+        if tail === temp {
+            tail = nil
+        }
+        temp?.previous = nil
+        temp?.next = nil
+        return temp?.value
+    }
+
+    func front() -> T? {
+        return head?.value
     }
 }
 
