@@ -64,8 +64,8 @@ fileprivate func testFiles() -> [(name: String, input: [String] , output: [Strin
         let outputContentLines = outputContent.components(separatedBy: .newlines)
 
         return (name: input,
-                input: inputContentLines.dropLast(),
-                output: outputContentLines.dropLast())
+                input: inputContentLines,
+                output: outputContentLines)
     }
 }
 
