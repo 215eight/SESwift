@@ -10,46 +10,48 @@ func minimumPasses(m: Int, w: Int, p: Int, n: Int) -> Int {
     var workers = Double(w)
     let cost = Double(p)
     let goal = Double(n)
-    var count = Double(0)
-    var passes = 0
+    var minimumPasses = Double.greatestFiniteMagnitude
+    var production = Double(0)
+    var productionPasses: Double = 0
 
-    while count < goal {
-        defer {
-            let production = machines * workers
-            if production <= cost {
-                let tempPasses = Int(cost / production)
-                passes += tempPasses
-                count += Double(tempPasses) * production
-            } else {
-                passes += 1
-                count += production
-            }
-            print("m: \(machines)\t", "w: \(workers)\t", "$: \(cost)\t", "c: \(count)\t", "g: \(goal)\t", "p: \(passes)")
-        }
+    guard machines * workers < goal else {
+        return 1
+    }
 
-        guard (machines * workers) + count < goal else {
+    while (true) {
+        let remainingProduction = goal - production
+        let currentOutput = machines * workers
+        let remainingPasses = floor(remainingProduction / currentOutput) +
+            (remainingProduction.truncatingRemainder(dividingBy: currentOutput) == 0 ? 0 : 1)
+        minimumPasses = min(minimumPasses, productionPasses + remainingPasses)
+
+        if remainingPasses == 1 {
             break
         }
 
-        let investment = floor(count / cost)
-        if investment >= 1.0 {
-            let delta = abs(machines - workers)
-            let equalizerInvestment = delta == 0 ? 0 : min(investment, delta)
-            let remainderInvestment = max(0, investment - equalizerInvestment)
-            let maxRemainderInvestment = floor(remainderInvestment / 2.0) + remainderInvestment.truncatingRemainder(dividingBy: 2.0)
-            let minRemainderInvestment = floor(remainderInvestment / 2.0)
+        if (production < cost) {
+            let tempProduction = cost - production
+            let tempPasses = floor(tempProduction / currentOutput) +
+                (tempProduction.truncatingRemainder(dividingBy: currentOutput) == 0 ? 0 : 1)
+            productionPasses += tempPasses
+            production += tempPasses * machines * workers
+            print(production)
 
-            if machines < workers {
-                machines += equalizerInvestment + maxRemainderInvestment
-                workers += minRemainderInvestment
-            } else {
-                workers += equalizerInvestment + maxRemainderInvestment
-                machines += minRemainderInvestment
+            if (production >= goal) {
+                minimumPasses = min(minimumPasses, productionPasses)
+                break
             }
-            count -= investment * cost
+        }
+
+        production -= cost
+        if machines <= workers {
+            machines += 1
+        } else {
+            workers += 1
         }
     }
-    return passes
+
+    return Int(minimumPasses)
 }
 /*:
  # Tests
