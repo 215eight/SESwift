@@ -12,11 +12,11 @@ class Node<T> {
     var next: Node?
 
     var isHead: Bool {
-        return previous == nil
+        return next == nil
     }
 
     var isTail: Bool {
-        return next == nil
+        return previous == nil
     }
 
     init(value: T) {
@@ -59,6 +59,45 @@ class Stack<T> {
     }
 }
 
+final class Queue2Stacks<T> {
+
+    private var inputStack = Stack<T>()
+    private var outputStack = Stack<T>()
+
+    var isEmpty: Bool {
+        return inputStack.isEmpty && outputStack.isEmpty
+    }
+
+    func enqueue(_ element: T) {
+        inputStack.push(element)
+    }
+
+    func dequeue() -> T? {
+        guard !isEmpty else {
+            return nil
+        }
+
+        if let lastOutput = outputStack.pop() {
+            return lastOutput
+        }
+
+        while let temp = inputStack.pop() {
+            outputStack.push(temp)
+        }
+
+        return outputStack.pop()
+    }
+
+    func front() -> T? {
+        if let lastOutput = outputStack.top {
+            return lastOutput
+        }
+        while let temp = inputStack.pop() {
+            outputStack.push(temp)
+        }
+        return outputStack.top
+    }
+}
 
 final class Queue<T> {
 
@@ -113,8 +152,21 @@ final class Queue<T> {
 import XCTest
 class Tests: XCTestCase {
     func testQueue() {
-        "".components(separatedBy: .whitespaces)
-        var queue = Queue<Int>()
+        let queue = Queue<Int>()
+        queue.enqueue(42)
+        XCTAssertEqual(queue.dequeue(), 42)
+        queue.enqueue(14)
+        XCTAssertEqual(queue.front(), 14)
+        queue.enqueue(28)
+        XCTAssertEqual(queue.front(), 14)
+        queue.enqueue(60)
+        queue.enqueue(78)
+        XCTAssertEqual(queue.dequeue(), 14)
+        XCTAssertEqual(queue.dequeue(), 28)
+    }
+
+    func testQueue2Stacks() {
+        let queue = Queue2Stacks<Int>()
         queue.enqueue(42)
         XCTAssertEqual(queue.dequeue(), 42)
         queue.enqueue(14)
