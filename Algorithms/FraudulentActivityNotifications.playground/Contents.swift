@@ -64,12 +64,164 @@ func activityNotifications(expenditure: [Int], d: Int) -> Int {
         valueCounter[value] += 1
     }
     return alerts
+}
 
+final class LinkedListNode<T: CustomStringConvertible> {
+    let element: T
+    var nextNode: LinkedListNode<T>? = nil
+
+    init(_ element: T) {
+        self.element = element
+    }
+}
+
+extension LinkedListNode: CustomStringConvertible {
+    var description: String {
+        if let nextNode = self.nextNode {
+            return element.description + " " + nextNode.description
+        } else {
+            return element.description
+        }
+    }
+}
+
+final class LinkedList<T: CustomStringConvertible> {
+    var head: LinkedListNode<T>? = nil
+    var tail: LinkedListNode<T>? = nil
+    var count: Int = 0
+
+    init() {}
+
+    func append(_ value: T) {
+        defer {
+            count += 1
+        }
+
+        let newNode = LinkedListNode(value)
+
+        guard head != nil, tail != nil else {
+            head = newNode
+            tail = newNode
+            return
+        }
+        tail?.nextNode = newNode
+        tail = newNode
+
+    }
+
+    func removeFirst() -> T? {
+        defer {
+            count = max(0, count - 1)
+        }
+        if tail === head {
+            tail = nil
+        }
+
+        let firstValue = head?.element
+        head = head?.nextNode
+        return firstValue
+    }
+}
+
+struct MedianCalculator {
+
+    private let valueRange: ClosedRange<Int>
+    private let medianSize: Int
+    private var valueHistory = LinkedList<Int>()
+    private var valueOccurenceCount: [Int]
+
+    init(valueRange: ClosedRange<Int>, medianSize: Int) {
+        self.valueRange = valueRange
+        self.medianSize = medianSize
+        self.valueOccurenceCount = Array(repeating: 0, count: valueRange.count)
+    }
+
+    mutating func median(_ value: Int) -> Double? {
+        precondition(valueRange.contains(value), "Value must be inside the value range specified at initialization")
+
+        let median = _median
+
+        if valueHistory.count >= medianSize {
+            if let value = valueHistory.removeFirst() {
+                valueOccurenceCount[value] -= 1
+            }
+        }
+        valueHistory.append(value)
+        valueOccurenceCount[value] += 1
+
+        return median
+    }
+
+    private var _median: Double? {
+        return medianSize % 2 == 0 ? _evenMedianSize : _oddMedianSize
+    }
+
+    private var _evenMedianSize: Double? {
+        guard valueHistory.count >= medianSize else {
+            return nil
+        }
+
+        let lowerMedianPoint = medianSize / 2
+        let upperMedianPoint = lowerMedianPoint + 1
+
+        var lowerValueCountAccumulator = 0
+        var lowerMedianValue = 0
+        var upperValueCountAccumulator = 0
+        var upperMedianValue = 0
+
+        for (value, valueCount) in valueOccurenceCount.enumerated() {
+            if lowerValueCountAccumulator < lowerMedianPoint {
+                lowerMedianValue = value
+                lowerValueCountAccumulator += valueCount
+            }
+            if upperValueCountAccumulator < upperMedianPoint {
+                upperMedianValue = value
+                upperValueCountAccumulator += valueCount
+            }
+
+            if lowerValueCountAccumulator >= lowerMedianPoint &&
+               upperValueCountAccumulator >= upperMedianPoint {
+                break
+            }
+        }
+        return Double(lowerMedianValue + upperMedianValue) / 2.0
+    }
+
+    private var _oddMedianSize: Double? {
+        guard valueHistory.count >= medianSize else {
+            return nil
+        }
+
+        let medianMidPoint = (medianSize / 2) + 1
+        var valueCountAccumulator = 0
+        var median = 0
+        for (value, valueCount) in valueOccurenceCount.enumerated() {
+            if valueCountAccumulator < medianMidPoint {
+                median = value
+                valueCountAccumulator += valueCount
+            } else {
+                break
+            }
+        }
+        return Double(median)
+    }
+}
+
+func activityNotifications2(expenditure: [Int], d: Int) -> Int {
+    var medianCalculator = MedianCalculator(valueRange: 0 ... 200, medianSize: d)
+
+    return expenditure.reduce(0) { alertAccumulator, expense in
+        guard let median = medianCalculator.median(expense) else {
+            return alertAccumulator
+        }
+        return Double(expense) >= (2 * median) ? alertAccumulator + 1 : alertAccumulator
+    }
 }
 
 /*:
  # Tests
  */
+
 
 runTestCases(inputOffset: 2,
              inputBuilder: { lines -> ([Int], Int) in
@@ -80,5 +232,5 @@ runTestCases(inputOffset: 2,
              outputBuilder: { lines -> Int in
                 return (Int(lines[0])!)
              }) { (input, expectedResult) in
-    return activityNotifications(expenditure: input.0, d: input.1)
+    return activityNotifications2(expenditure: input.0, d: input.1)
 }
