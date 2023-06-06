@@ -30,6 +30,27 @@ func isPanagram2(_ str: String) -> Bool {
     return letters.count == 26
 }
 
+func isPanagram3(_ str: String) -> Bool {
+    
+    func getAsciiValue(_ character: Character) -> UInt8 {
+        character.asciiValue ?? 0
+    }
+    
+    let baseAsciiValue = getAsciiValue("a")
+    var counter = 0
+    for char in str.lowercased() {
+        guard char.isLetter else {
+            continue
+        }
+        let asciiValue = getAsciiValue(char) - baseAsciiValue
+        let counterBit = 1 << asciiValue
+        counter = counter | counterBit
+    }
+    
+    let result = (1 << 26) - 1
+    return counter == result
+}
+
 /*:
  # Tests
  */
@@ -44,6 +65,11 @@ class Tests: XCTestCase {
     func testIsPanagram2() {
         XCTAssertTrue(isPanagram2("The quick brown fox jumps over ther lazy dog"))
         XCTAssertFalse(isPanagram2("The quick brown fox jumped over ther lazy dog"))
+    }
+    
+    func testIsPanagram3() {
+        XCTAssertTrue(isPanagram3("The quick brown fox jumps over ther lazy dog"))
+        XCTAssertFalse(isPanagram3("The quick brown fox jumped over ther lazy dog"))
     }
 }
 

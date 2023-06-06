@@ -38,6 +38,13 @@ extension String {
     func fuzzyContains3(_ str: String) -> Bool {
         return range(of: str, options: .caseInsensitive, range: nil, locale: nil) != nil
     }
+    
+    func naiveFuzzyMatch(_ str: String) -> Bool {
+        let regex = str.reduce("") { acc, char in
+            return acc.appending("\(char).*")
+        }
+        return range(of: regex, options: [.regularExpression, .caseInsensitive], range: nil, locale: nil) != nil
+    }
 }
 
 /*:
@@ -60,6 +67,13 @@ class Tests: XCTestCase {
         XCTAssertTrue("Hello, world".fuzzyContains3("Hello"))
         XCTAssertTrue("Hello, world".fuzzyContains3("WORLD"))
         XCTAssertFalse("Hello, world".fuzzyContains3("Goodbye"))
+    }
+    
+    func testNaiveFuzzyMatch() {
+        XCTAssertTrue("Hello, world".naiveFuzzyMatch("hod"))
+        XCTAssertTrue("Hello, world".naiveFuzzyMatch("Hod"))
+        XCTAssertTrue("Hello, world".naiveFuzzyMatch("Hw"))
+        XCTAssertTrue("Hello, world".naiveFuzzyMatch("hw"))
     }
 }
 
